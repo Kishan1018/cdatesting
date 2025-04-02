@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CHAMPS Digital </title>
+  <style>
+    :root {
+      --bg-color: #343541;
+      --text-color: #dcdcdc;
+      --header-bg: #444654;
+      --message-bg-user: #0f8cff;
+      --message-bg-response: #3e3f4b;
+      --input-bg: #40414f;
+      --button-bg: #0f8cff;
+      --border-color: #565869;
+      --toggle-bg: var(--border-color);
+    }
+    .light-mode {
+      --bg-color: #f9f9f9;
+      --text-color: #333;
+      --header-bg: #ffffff;
+      --message-bg-user: #4a90e2;
+      --message-bg-response: #f1f1f1;
+      --input-bg: #ffffff;
+      --button-bg: #4a90e2;
+      --border-color: #ddd;
+      --toggle-bg: var(--border-color);
+    }
+    body.dark-mode .toggle {
+      background: var(--message-bg-user);
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    /* Assistant Box Wrapper */
+    .assistant-box {
+      width: 95%;
+      max-width: 1400px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow:
+        0 4px 8px rgba(0, 0, 0, 0.2),
+        0 0 8px rgba(0, 162, 255, 0.2),
+        0 0 15px rgba(0, 162, 255, 0.1);
+      transition: box-shadow 0.3s ease;
+    }
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border-color);
+    }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+    }
+    .beta-tag {
+      font-size: inherit;
+      font-weight: inherit;
+      background: linear-gradient(90deg, #6ec1ff 0%, #78caff 50%, #82d2ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-left: 8px;
+    }
+    /* Toggle Switch */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .toggle-label {
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .toggle {
+      position: relative;
+      width: 50px;
+      height: 24px;
+      background: var(--toggle-bg);
+      border-radius: 15px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .toggle:before {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s ease;
+    }
+    body.light-mode .toggle:before {
+      transform: translateX(26px);
+    }
+    /* Chat Container */
+    .chat-container {
+      background: var(--header-bg);
+      display: flex;
+      flex-direction: column;
+      height: 70vh;
+      transition: background-color 0.3s ease;
+    }
+    /* Messages Section */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px; /* reduced gap for less vertical space */
+    }
+    .messages::-webkit-scrollbar {
+      width: 6px;
+    }
+    .messages::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 5px;
+    }
+    /* Shared message style */
+    .message {
+      box-sizing: border-box;
+      padding: 10px 15px; /* increased horizontal padding */
+      border-radius: 25px;
+      max-width: 75%;
+      font-size: 0.95rem;
+      line-height: 1.3;
+      /* Ensure text wraps and never overflows the bubble */
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: slide-in 0.4s forwards;
+    }
+    @keyframes slide-in {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .user-message {
+      align-self: flex-end;
+      background: var(--message-bg-user);
+      color: white;
+    }
+    .response-message {
+      align-self: flex-start;
+      background: var(--message-bg-response);
+      transition: all 0.5s ease;
+    }
+    /* Paragraphs inside a message bubble */
+    .message p {
+      margin: 0.2em 0;
+      line-height: 1.3;
+    }
+    /* Typing Indicator */
+    .typing-indicator {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+    }
+    .typing-indicator span {
+      display: block;
+      width: 8px;
+      height: 8px;
+      background-color: #1f96f2;
+      border-radius: 50%;
+      animation: blink 1.4s infinite ease-in-out;
+    }
+    .typing-indicator span:nth-child(1) {
+      animation-delay: 0s;
+    }
+    .typing-indicator span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .typing-indicator span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes blink {
+      0%, 80%, 100% {
+        opacity: 0.4;
+        transform: scale(1);
+      }
+      40% {
+        opacity: 1;
+        transform: scale(1.2);
+      }
+    }
+    /* Input Section */
+    .input-section {
+      background: var(--input-bg);
+      border-top: 1px solid var(--border-color);
+      padding: 15px;
+      display: flex;
+      gap: 10px;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    .input-section textarea {
+      flex: 1;
+      padding: 10px 15px;
+      font-size: 1rem;
+      line-height: 20px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--text-color);
+      outline: none;
+      resize: none;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      transition: height 0.3s ease;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .input-section textarea::placeholder {
+      color: #a1a1aa;
+    }
+    .input-section button {
+      background: var(--button-bg);
+      color: white;
+      font-size: 1rem;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .input-section button:hover {
+      background: #0073e6;
+    }
+    /* Choice Buttons */
+    .choice-button {
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-size: 1rem;
+      border: 1px solid var(--button-bg);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      margin: 5px;
+      box-shadow: 0 0 10px rgba(15, 140, 255, 0.3);
+    }
+    .choice-button:hover {
+      transform: scale(0.98);
+    }
+    .choice-button:active {
+      transform: scale(0.95);
+    }
+    /* Disabled state for the choice bubble when no option is selected */
+    #choiceBubble.disabled {
+      opacity: 0.5;
+      filter: grayscale(100%);
+      pointer-events: none;
+      transition: opacity 0.5s ease, filter 0.5s ease;
+    }
+    /* Footer */
+    footer {
+      margin-top: 15px;
+      color: var(--text-color);
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="assistant-box">
+    <header>
+      <h1>CHAMPS Digital Assistant <span class="beta-tag">beta</span></h1>
+      <div class="toggle-container">
+        <span class="toggle-label">Dark</span>
+        <div class="toggle" onclick="toggleTheme()"></div>
+        <span class="toggle-label">Light</span>
+      </div>
+    </header>
+    <div class="chat-container">
+      <div class="messages" id="messages">
+        <!-- Chat messages will appear here -->
+      </div>
+      <div class="input-section">
+        <textarea id="userInput" placeholder="Type a message..." rows="1"></textarea>
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+  <footer>
+    Powered by CHAMPS Software
+  </footer>
+  <script>
+    // Generate a new session ID on each page load.
+    let sessionId = crypto.randomUUID();
+    // Global variable to store the user's support choice ("mobile" or "desktop").
+    window.supportChoice = undefined;
+    
+    const userInput = document.getElementById('userInput');
+    let initialHeight = userInput.scrollHeight;
+    userInput.style.height = initialHeight + "px";
+    
+    userInput.addEventListener('input', function() {
+      this.style.height = "auto";
+      this.style.height = this.scrollHeight + "px";
+    });
+    
+    userInput.addEventListener('keydown', function(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+      }
+    });
+    
+    async function sendMessage() {
+      // If the user has not made a choice, gray out the choice bubble.
+      if (!window.supportChoice) {
+        const choiceBubble = document.getElementById('choiceBubble');
+        if (choiceBubble) {
+          choiceBubble.classList.add('disabled');
+        }
+      }
+      
+      const textArea = document.getElementById('userInput');
+      const userMessage = textArea.value.trim();
+      if (!userMessage) return;
+      
+      const messagesDiv = document.getElementById('messages');
+      
+      // Append user's message bubble.
+      const userMsgDiv = document.createElement('div');
+      userMsgDiv.className = 'message user-message';
+      userMsgDiv.innerText = userMessage;
+      messagesDiv.appendChild(userMsgDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      
+      textArea.value = "";
+      textArea.style.height = initialHeight + "px";
+      
+      const spinnerBubble = document.createElement('div');
+      spinnerBubble.className = 'message response-message';
+      
+      const spinnerContainer = document.createElement('div');
+      spinnerContainer.className = 'spinner-container';
+      spinnerContainer.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+      
+      spinnerBubble.appendChild(spinnerContainer);
+      messagesDiv.appendChild(spinnerBubble);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      
+      try {
+        // Include support_choice in the payload if set.
+        const payload = { message: userMessage, session_id: sessionId };
+        if (window.supportChoice) {
+          payload.support_choice = window.supportChoice;
+        }
+        const response = await fetch('http://127.0.0.1:5000/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        
+        messagesDiv.removeChild(spinnerBubble);
+        
+        const responseBubble = document.createElement('div');
+        responseBubble.className = 'message response-message';
+        // Use innerHTML so we can display the HTML from the backend.
+        responseBubble.innerHTML = data.reply;
+        messagesDiv.appendChild(responseBubble);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      } catch (error) {
+        console.error('Error communicating with the backend:', error);
+        if (spinnerBubble.parentNode) {
+          messagesDiv.removeChild(spinnerBubble);
+        }
+      }
+    }
+    
+    function toggleTheme() {
+      document.body.classList.toggle('light-mode');
+      document.body.classList.toggle('dark-mode');
+    }
+    
+    // When a choice button is clicked, remove the choice bubble and replace it with a prompt.
+    function handleChoice(choice, bubbleElement) {
+      // Set the global support choice variable.
+      window.supportChoice = choice;
+      
+      // Animate the bubble disappearing.
+      bubbleElement.style.transition = 'opacity 0.5s ease';
+      bubbleElement.style.opacity = '0';
+      setTimeout(() => {
+        bubbleElement.remove();
+        
+        // Append a new message bubble that says "How can I help you?"
+        const messagesDiv = document.getElementById('messages');
+        const followUpBubble = document.createElement('div');
+        followUpBubble.className = 'message response-message';
+        followUpBubble.innerText = 'How can I help you?';
+        messagesDiv.appendChild(followUpBubble);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }, 500);
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeChat();
+    });
+    
+    // Initialize the chat with welcome and support choice messages.
+    function initializeChat() {
+      const messagesDiv = document.getElementById('messages');
+      
+      // Create welcome message bubble.
+      const welcomeBubble = document.createElement('div');
+      welcomeBubble.className = 'message response-message';
+      welcomeBubble.innerText = 'Welcome to CHAMPS Software, how can I assist you today?';
+      messagesDiv.appendChild(welcomeBubble);
+      
+      // Create choice bubble container.
+      const choiceBubble = document.createElement('div');
+      choiceBubble.className = 'message response-message';
+      choiceBubble.style.display = 'flex';
+      choiceBubble.style.flexDirection = 'row';
+      choiceBubble.style.justifyContent = 'center';
+      choiceBubble.style.gap = '10px';
+      choiceBubble.id = "choiceBubble";
+      
+      // Create Mobile App button.
+      const mobileButton = document.createElement('button');
+      mobileButton.className = 'choice-button';
+      mobileButton.innerText = 'CHAMPS Mobile App';
+      
+      // Create Desktop button.
+      const desktopButton = document.createElement('button');
+      desktopButton.className = 'choice-button';
+      desktopButton.innerText = 'CHAMPS CMMS';
+      
+      // Add event listeners to buttons.
+      mobileButton.addEventListener('click', function() {
+        handleChoice('mobile', choiceBubble);
+      });
+      
+      desktopButton.addEventListener('click', function() {
+        handleChoice('desktop', choiceBubble);
+      });
+      
+      choiceBubble.appendChild(mobileButton);
+      choiceBubble.appendChild(desktopButton);
+      messagesDiv.appendChild(choiceBubble);
+      
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+    
+    // When the tab is closed or reloaded, end the session.
+    window.addEventListener('beforeunload', function() {
+      navigator.sendBeacon('http://127.0.0.1:5000/end_session', JSON.stringify({ session_id: sessionId }));
+    });
+  </script>
+</body>
+</html>
