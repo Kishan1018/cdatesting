@@ -374,7 +374,7 @@
         if (window.supportChoice) {
           payload.support_choice = window.supportChoice;
         }
-        const response = await fetch('https://flask-backend.onrender.com/chat', {
+        const response = await fetch('https://cdavercel-kishans-projects-68831b2c.vercel.app/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -474,7 +474,7 @@
     
     // When the tab is closed or reloaded, end the session.
     window.addEventListener('beforeunload', function() {
-      navigator.sendBeacon('https://flask-backend.onrender.com/chat/end_session', JSON.stringify({ session_id: sessionId }));
+      navigator.sendBeacon('https://cdavercel-kishans-projects-68831b2c.vercel.app/end_session', JSON.stringify({ session_id: sessionId }));
     });
   </script>
 </body>
