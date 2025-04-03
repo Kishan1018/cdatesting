@@ -374,7 +374,7 @@
         if (window.supportChoice) {
           payload.support_choice = window.supportChoice;
         }
-        const response = await fetch('https://cdabackend.onrender.com', {
+        const response = await fetch('https://cdabackend.onrender.com/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -474,7 +474,7 @@
     
     // When the tab is closed or reloaded, end the session.
     window.addEventListener('beforeunload', function() {
-      navigator.sendBeacon('https://cdabackend.onrender.com', JSON.stringify({ session_id: sessionId }));
+      navigator.sendBeacon('https://cdabackend.onrender.com'/end_session, JSON.stringify({ session_id: sessionId }));
     });
   </script>
 </body>
