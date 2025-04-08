@@ -140,7 +140,7 @@
       background: var(--border-color);
       border-radius: 5px;
     }
-    /* Shared message style */
+    /* Shared Message Style */
     .message {
       box-sizing: border-box;
       padding: 10px 15px; /* increased horizontal padding */
@@ -148,7 +148,6 @@
       max-width: 75%;
       font-size: 0.95rem;
       line-height: 1.3;
-      /* Ensure text wraps and never overflows the bubble */
       white-space: pre-wrap;
       word-break: break-word;
       overflow-wrap: anywhere;
@@ -219,7 +218,12 @@
       display: flex;
       gap: 10px;
       transition: background-color 0.3s ease, border-color 0.3s ease;
-      /* Removed the box-shadow from the container */
+    }
+    /* Normal Text Input (hidden during choice mode) */
+    #textInputContainer {
+      width: 100%;
+      display: flex;
+      gap: 10px;
     }
     .input-section textarea {
       flex: 1;
@@ -237,8 +241,8 @@
       transition: height 0.3s ease;
       max-height: 200px;
       overflow-y: auto;
-      /* Added white box-shadow on the text area border */
-      box-shadow: 0 0 6px rgba(255,255,255,0.5);
+      /* White glow from the text input’s border */
+      box-shadow: 0 0 4px rgba(255,255,255,0.5);
     }
     .input-section textarea::placeholder {
       color: #a1a1aa;
@@ -256,26 +260,26 @@
     .input-section button:hover {
       background: #0073e6;
     }
-    /* Choice Buttons */
-    .choice-button {
-      background: var(--bg-color);
-      color: var(--text-color);
+    /* Choice Buttons in Choice Mode */
+    .choice-input-button {
+      width: 48%;
+      height: 40px;
       font-size: 1rem;
-      border: 1px solid var(--button-bg);
-      padding: 8px 16px;
+      background: var(--bg-color) !important;
+      color: var(--text-color) !important;
+      border: 2px solid var(--button-bg) !important;
       border-radius: 8px;
       cursor: pointer;
+      box-shadow: 0 0 8px rgba(15, 140, 255, 0.8) !important;
       transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-      margin: 5px;
-      box-shadow: 0 0 10px rgba(15, 140, 255, 0.3);
     }
-    .choice-button:hover {
+    .choice-input-button:hover {
       transform: scale(0.98);
     }
-    .choice-button:active {
+    .choice-input-button:active {
       transform: scale(0.95);
     }
-    /* Disabled state for the choice bubble when no option is selected */
+    /* Disabled state for the original choice bubble (if needed) */
     #choiceBubble.disabled {
       opacity: 0.5;
       filter: grayscale(100%);
@@ -304,9 +308,12 @@
       <div class="messages" id="messages">
         <!-- Chat messages will appear here -->
       </div>
-      <div class="input-section">
-        <textarea id="userInput" placeholder="Type a message..." rows="1"></textarea>
-        <button onclick="sendMessage()">Send</button>
+      <div class="input-section" id="inputSection">
+        <!-- In regular mode, this container will hold the text input & send button -->
+        <div id="textInputContainer">
+          <textarea id="userInput" placeholder="Type a message..." rows="1"></textarea>
+          <button onclick="sendMessage()">Send</button>
+        </div>
       </div>
     </div>
   </div>
@@ -316,8 +323,12 @@
   <script>
     // Generate a new session ID on each page load.
     let sessionId = crypto.randomUUID();
-    // Global variable to store the user's support choice ("mobile" or "desktop").
+    // Global variable for user's support choice.
     window.supportChoice = undefined;
+    // Flag for choice mode.
+    window.choiceMode = true;
+    // Save original input HTML to restore after choice mode.
+    const originalInputHTML = document.getElementById('textInputContainer').innerHTML;
     
     const userInput = document.getElementById('userInput');
     let initialHeight = userInput.scrollHeight;
@@ -336,11 +347,11 @@
     });
     
     async function sendMessage() {
-      // If the user has not made a choice, gray out the choice bubble.
-      if (!window.supportChoice) {
-        const choiceBubble = document.getElementById('choiceBubble');
-        if (choiceBubble) {
-          choiceBubble.classList.add('disabled');
+      // If still in choice mode with no selection, gray out choice container.
+      if (window.choiceMode && !window.supportChoice) {
+        const choiceContainer = document.getElementById('inputSection').querySelector('.choice-mode');
+        if (choiceContainer) {
+          choiceContainer.classList.add('disabled');
         }
       }
       
@@ -350,7 +361,7 @@
       
       const messagesDiv = document.getElementById('messages');
       
-      // Append user's message bubble.
+      // Append user message bubble.
       const userMsgDiv = document.createElement('div');
       userMsgDiv.className = 'message user-message';
       userMsgDiv.innerText = userMessage;
@@ -372,7 +383,6 @@
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
       
       try {
-        // Include support_choice in the payload if set.
         const payload = { message: userMessage, session_id: sessionId };
         if (window.supportChoice) {
           payload.support_choice = window.supportChoice;
@@ -388,7 +398,6 @@
         
         const responseBubble = document.createElement('div');
         responseBubble.className = 'message response-message';
-        // Use innerHTML so we can display the HTML from the backend.
         responseBubble.innerHTML = data.reply;
         messagesDiv.appendChild(responseBubble);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -405,77 +414,124 @@
       document.body.classList.toggle('dark-mode');
     }
     
-    // When a choice button is clicked, remove the choice bubble and replace it with a prompt.
-    function handleChoice(choice, bubbleElement) {
-      // Set the global support choice variable.
-      window.supportChoice = choice;
+    // Initialize product choice mode.
+    function initializeChoiceMode() {
+      const inputSection = document.getElementById('inputSection');
+      inputSection.innerHTML = '';
+      const choiceContainer = document.createElement('div');
+      choiceContainer.classList.add('choice-mode');
+      choiceContainer.style.display = 'flex';
+      choiceContainer.style.justifyContent = 'center';
+      choiceContainer.style.width = '100%';
+      choiceContainer.style.gap = '2%';
       
-      // Animate the bubble disappearing.
-      bubbleElement.style.transition = 'opacity 0.5s ease';
-      bubbleElement.style.opacity = '0';
-      setTimeout(() => {
-        bubbleElement.remove();
-        
-        // Append a new message bubble that says "How can I help you?"
-        const messagesDiv = document.getElementById('messages');
-        const followUpBubble = document.createElement('div');
-        followUpBubble.className = 'message response-message';
-        followUpBubble.innerText = 'How can I help you?';
-        messagesDiv.appendChild(followUpBubble);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      }, 500);
+      const mobileButton = document.createElement('button');
+      mobileButton.classList.add('choice-input-button');
+      mobileButton.innerText = 'CHAMPS Mobile App';
+      
+      const desktopButton = document.createElement('button');
+      desktopButton.classList.add('choice-input-button');
+      desktopButton.innerText = 'CHAMPS CMMS';
+      
+      mobileButton.addEventListener('click', function() {
+        handleProductChoice('mobile');
+      });
+      desktopButton.addEventListener('click', function() {
+        handleProductChoice('desktop');
+      });
+      
+      choiceContainer.appendChild(mobileButton);
+      choiceContainer.appendChild(desktopButton);
+      inputSection.appendChild(choiceContainer);
+    }
+    
+    // When a product is chosen.
+    function handleProductChoice(product) {
+      window.supportChoice = product;
+      window.choiceMode = false;
+      
+      // Remove the prompt bubble that asks to choose a product.
+      const promptBubble = document.getElementById('promptBubble');
+      if (promptBubble) {
+        promptBubble.remove();
+      }
+      
+      let messageText;
+      if (product === 'mobile') {
+        messageText = "How can I help you with CHAMPS Mobile App?";
+      } else if (product === 'desktop') {
+        messageText = "How can I help you with CHAMPS CMMS?";
+      }
+      
+      const messagesDiv = document.getElementById('messages');
+      // Append a bot message bubble with the new text.
+      const botMsgBubble = document.createElement('div');
+      botMsgBubble.className = 'message response-message';
+      botMsgBubble.innerText = messageText;
+      messagesDiv.appendChild(botMsgBubble);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      
+      // Animate the transition: fade out the choice buttons, then restore input bar.
+      const inputSection = document.getElementById('inputSection');
+      const choiceContainer = inputSection.querySelector('.choice-mode');
+      if (choiceContainer) {
+        choiceContainer.style.transition = 'opacity 0.5s ease';
+        choiceContainer.style.opacity = '0';
+        setTimeout(() => {
+          // Replace with original input HTML.
+          inputSection.innerHTML = originalInputHTML;
+          const newInputContainer = document.getElementById('textInputContainer');
+          newInputContainer.style.opacity = 0;
+          // Animate the input container fading in.
+          setTimeout(() => {
+            newInputContainer.style.transition = 'opacity 0.5s ease';
+            newInputContainer.style.opacity = '1';
+          }, 10);
+          const newUserInput = document.getElementById('userInput');
+          newUserInput.style.height = initialHeight + "px";
+          newUserInput.addEventListener('input', function() {
+            this.style.height = "auto";
+            this.style.height = this.scrollHeight + "px";
+          });
+          newUserInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+              event.preventDefault();
+              sendMessage();
+            }
+          });
+        }, 500);
+      } else {
+        // Fallback if choiceContainer doesn't exist.
+        inputSection.innerHTML = originalInputHTML;
+      }
+      
+      // Do not send a request here—future API calls will include the support_choice parameter.
+    }
+    
+    // Initialize the chat conversation.
+    function initializeChat() {
+      const messagesDiv = document.getElementById('messages');
+      
+      const welcomeBubble = document.createElement('div');
+      welcomeBubble.className = 'message response-message';
+      welcomeBubble.innerText = 'Welcome to CHAMPS Software, how can I assist you today?';
+      messagesDiv.appendChild(welcomeBubble);
+      
+      const promptBubble = document.createElement('div');
+      promptBubble.className = 'message response-message';
+      promptBubble.id = "promptBubble";
+      promptBubble.innerText = 'Please choose a product below.';
+      messagesDiv.appendChild(promptBubble);
+      
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      
+      initializeChoiceMode();
     }
     
     document.addEventListener('DOMContentLoaded', function() {
       initializeChat();
     });
     
-    // Initialize the chat with welcome and support choice messages.
-    function initializeChat() {
-      const messagesDiv = document.getElementById('messages');
-      
-      // Create welcome message bubble.
-      const welcomeBubble = document.createElement('div');
-      welcomeBubble.className = 'message response-message';
-      welcomeBubble.innerText = 'Welcome to CHAMPS Software, how can I assist you today?';
-      messagesDiv.appendChild(welcomeBubble);
-      
-      // Create choice bubble container.
-      const choiceBubble = document.createElement('div');
-      choiceBubble.className = 'message response-message';
-      choiceBubble.style.display = 'flex';
-      choiceBubble.style.flexDirection = 'row';
-      choiceBubble.style.justifyContent = 'center';
-      choiceBubble.style.gap = '10px';
-      choiceBubble.id = "choiceBubble";
-      
-      // Create Mobile App button.
-      const mobileButton = document.createElement('button');
-      mobileButton.className = 'choice-button';
-      mobileButton.innerText = 'CHAMPS Mobile App';
-      
-      // Create Desktop button.
-      const desktopButton = document.createElement('button');
-      desktopButton.className = 'choice-button';
-      desktopButton.innerText = 'CHAMPS CMMS';
-      
-      // Add event listeners to buttons.
-      mobileButton.addEventListener('click', function() {
-        handleChoice('mobile', choiceBubble);
-      });
-      
-      desktopButton.addEventListener('click', function() {
-        handleChoice('desktop', choiceBubble);
-      });
-      
-      choiceBubble.appendChild(mobileButton);
-      choiceBubble.appendChild(desktopButton);
-      messagesDiv.appendChild(choiceBubble);
-      
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-    
-    // When the tab is closed or reloaded, end the session.
     window.addEventListener('beforeunload', function() {
       navigator.sendBeacon('https://cdabackend.onrender.com/end_session', JSON.stringify({ session_id: sessionId }));
     });
