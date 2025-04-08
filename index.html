@@ -219,6 +219,8 @@
       display: flex;
       gap: 10px;
       transition: background-color 0.3s ease, border-color 0.3s ease;
+      /* Added white box-shadow around the input section */
+      box-shadow: 0 4px 8px rgba(255,255,255,0.2), 0 0 8px rgba(255,255,255,0.2), 0 0 15px rgba(255,255,255,0.1);
     }
     .input-section textarea {
       flex: 1;
@@ -474,7 +476,7 @@
     
     // When the tab is closed or reloaded, end the session.
     window.addEventListener('beforeunload', function() {
-      navigator.sendBeacon('https://cdabackend.onrender.com'/end_session, JSON.stringify({ session_id: sessionId }));
+      navigator.sendBeacon('https://cdabackend.onrender.com/end_session', JSON.stringify({ session_id: sessionId }));
     });
   </script>
 </body>
