@@ -219,8 +219,7 @@
       display: flex;
       gap: 10px;
       transition: background-color 0.3s ease, border-color 0.3s ease;
-      /* Added white box-shadow around the input section */
-      box-shadow: 0 4px 8px rgba(255,255,255,0.2), 0 0 8px rgba(255,255,255,0.2), 0 0 15px rgba(255,255,255,0.1);
+      /* Removed the box-shadow from the container */
     }
     .input-section textarea {
       flex: 1;
@@ -238,6 +237,8 @@
       transition: height 0.3s ease;
       max-height: 200px;
       overflow-y: auto;
+      /* Added white box-shadow on the text area border */
+      box-shadow: 0 0 8px rgba(255,255,255,0.8);
     }
     .input-section textarea::placeholder {
       color: #a1a1aa;
