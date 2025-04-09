@@ -219,13 +219,6 @@
       gap: 10px;
       transition: background-color 0.3s ease, border-color 0.3s ease;
     }
-    /* Normal Text Input (hidden during choice mode) */
-    #textInputContainer {
-      width: 100%;
-      display: flex;
-      gap: 10px;
-    }
-    /* Note the inline onkeydown attribute added to the textarea */
     .input-section textarea {
       flex: 1;
       padding: 10px 15px;
@@ -237,6 +230,7 @@
       color: var(--text-color);
       outline: none;
       resize: none;
+      overflow: hidden;
       white-space: pre-wrap;
       overflow-wrap: break-word;
       transition: height 0.3s ease;
@@ -270,7 +264,7 @@
       border: 2px solid var(--button-bg) !important;
       border-radius: 8px;
       cursor: pointer;
-      box-shadow: 0 0 8px rgba(15, 140, 255, 0.8) !important;
+      box-shadow: 0 0 8px rgba(15,140,255,0.8) !important;
       transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     }
     .choice-input-button:hover {
@@ -311,9 +305,9 @@
       <div class="input-section" id="inputSection">
         <!-- In regular mode, this container will hold the text input & send button -->
         <div id="textInputContainer">
-          <!-- Notice the onkeydown attribute added to the textarea -->
+          <!-- Notice the inline onkeydown attribute added to the textarea -->
           <textarea id="userInput" placeholder="Type a message..." rows="1" onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); sendMessage(); }"></textarea>
-          <button onclick="sendMessage()">Send</button>
+          <button id="sendButton" onclick="sendMessage()">Send</button>
         </div>
       </div>
     </div>
@@ -331,36 +325,50 @@
     // Save original input HTML to restore after choice mode.
     const originalInputHTML = document.getElementById('textInputContainer').innerHTML;
     
-    // A helper function to attach input events to the textarea.
+    const userInput = document.getElementById('userInput');
+    // Save default height (initial height).
+    let initialHeight = userInput.scrollHeight;
+    userInput.style.height = initialHeight + "px";
+    
     function initializeInputEvents(inputElement) {
       inputElement.addEventListener('input', function() {
         this.style.height = "auto";
-        this.style.height = this.scrollHeight + "px";
+        if(this.value.trim() === ""){
+          this.style.height = initialHeight + "px";
+        } else {
+          this.style.height = this.scrollHeight + "px";
+        }
       });
       // The onkeydown event is already set inline.
     }
     
-    const userInput = document.getElementById('userInput');
-    let initialHeight = userInput.scrollHeight;
-    userInput.style.height = initialHeight + "px";
     initializeInputEvents(userInput);
     
     async function sendMessage() {
-      // If still in choice mode with no selection, gray out the choice container.
-      if (window.choiceMode && !window.supportChoice) {
-        const choiceContainer = document.getElementById('inputSection').querySelector('.choice-mode');
-        if (choiceContainer) {
-          choiceContainer.classList.add('disabled');
-        }
+      // Prevent sending if send button or textarea is disabled.
+      const sendBtn = document.getElementById('sendButton');
+      if(sendBtn.disabled || userInput.disabled) {
+        return;
       }
+      
+      // Disable send button and textarea.
+      sendBtn.disabled = true;
+      sendBtn.style.opacity = '0.5';
+      userInput.disabled = true;
       
       const textArea = document.getElementById('userInput');
       const userMessage = textArea.value.trim();
-      if (!userMessage) return;
+      if (!userMessage) {
+        // Re-enable triggers if message is empty.
+        sendBtn.disabled = false;
+        sendBtn.style.opacity = '1';
+        userInput.disabled = false;
+        return;
+      }
       
       const messagesDiv = document.getElementById('messages');
       
-      // Append user message bubble.
+      // Append user's message bubble.
       const userMsgDiv = document.createElement('div');
       userMsgDiv.className = 'message user-message';
       userMsgDiv.innerText = userMessage;
@@ -400,11 +408,20 @@
         responseBubble.innerHTML = data.reply;
         messagesDiv.appendChild(responseBubble);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        
+        // Re-enable send button and textarea.
+        sendBtn.disabled = false;
+        sendBtn.style.opacity = '1';
+        userInput.disabled = false;
       } catch (error) {
         console.error('Error communicating with the backend:', error);
         if (spinnerBubble.parentNode) {
           messagesDiv.removeChild(spinnerBubble);
         }
+        // Re-enable if there's an error.
+        sendBtn.disabled = false;
+        sendBtn.style.opacity = '1';
+        userInput.disabled = false;
       }
     }
     
