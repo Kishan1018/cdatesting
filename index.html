@@ -225,6 +225,7 @@
       display: flex;
       gap: 10px;
     }
+    /* Note the inline onkeydown attribute added to the textarea */
     .input-section textarea {
       flex: 1;
       padding: 10px 15px;
@@ -241,7 +242,6 @@
       transition: height 0.3s ease;
       max-height: 200px;
       overflow-y: auto;
-      /* White glow from the text input’s border */
       box-shadow: 0 0 4px rgba(255,255,255,0.5);
     }
     .input-section textarea::placeholder {
@@ -311,7 +311,8 @@
       <div class="input-section" id="inputSection">
         <!-- In regular mode, this container will hold the text input & send button -->
         <div id="textInputContainer">
-          <textarea id="userInput" placeholder="Type a message..." rows="1"></textarea>
+          <!-- Notice the onkeydown attribute added to the textarea -->
+          <textarea id="userInput" placeholder="Type a message..." rows="1" onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); sendMessage(); }"></textarea>
           <button onclick="sendMessage()">Send</button>
         </div>
       </div>
@@ -330,24 +331,22 @@
     // Save original input HTML to restore after choice mode.
     const originalInputHTML = document.getElementById('textInputContainer').innerHTML;
     
+    // A helper function to attach input events to the textarea.
+    function initializeInputEvents(inputElement) {
+      inputElement.addEventListener('input', function() {
+        this.style.height = "auto";
+        this.style.height = this.scrollHeight + "px";
+      });
+      // The onkeydown event is already set inline.
+    }
+    
     const userInput = document.getElementById('userInput');
     let initialHeight = userInput.scrollHeight;
     userInput.style.height = initialHeight + "px";
-    
-    userInput.addEventListener('input', function() {
-      this.style.height = "auto";
-      this.style.height = this.scrollHeight + "px";
-    });
-    
-    userInput.addEventListener('keydown', function(event) {
-      if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        sendMessage();
-      }
-    });
+    initializeInputEvents(userInput);
     
     async function sendMessage() {
-      // If still in choice mode with no selection, gray out choice container.
+      // If still in choice mode with no selection, gray out the choice container.
       if (window.choiceMode && !window.supportChoice) {
         const choiceContainer = document.getElementById('inputSection').querySelector('.choice-mode');
         if (choiceContainer) {
@@ -450,7 +449,7 @@
       window.supportChoice = product;
       window.choiceMode = false;
       
-      // Remove the prompt bubble that asks to choose a product.
+      // Remove the prompt bubble.
       const promptBubble = document.getElementById('promptBubble');
       if (promptBubble) {
         promptBubble.remove();
@@ -471,41 +470,29 @@
       messagesDiv.appendChild(botMsgBubble);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
       
-      // Animate the transition: fade out the choice buttons, then restore input bar.
+      // Animate the transition: fade out the choice container, then restore input bar.
       const inputSection = document.getElementById('inputSection');
       const choiceContainer = inputSection.querySelector('.choice-mode');
       if (choiceContainer) {
         choiceContainer.style.transition = 'opacity 0.5s ease';
         choiceContainer.style.opacity = '0';
         setTimeout(() => {
-          // Replace with original input HTML.
           inputSection.innerHTML = originalInputHTML;
           const newInputContainer = document.getElementById('textInputContainer');
           newInputContainer.style.opacity = 0;
-          // Animate the input container fading in.
           setTimeout(() => {
             newInputContainer.style.transition = 'opacity 0.5s ease';
             newInputContainer.style.opacity = '1';
           }, 10);
           const newUserInput = document.getElementById('userInput');
           newUserInput.style.height = initialHeight + "px";
-          newUserInput.addEventListener('input', function() {
-            this.style.height = "auto";
-            this.style.height = this.scrollHeight + "px";
-          });
-          newUserInput.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault();
-              sendMessage();
-            }
-          });
+          initializeInputEvents(newUserInput);
         }, 500);
       } else {
-        // Fallback if choiceContainer doesn't exist.
         inputSection.innerHTML = originalInputHTML;
       }
       
-      // Do not send a request here—future API calls will include the support_choice parameter.
+      // Do not send an API request here; future messages include support_choice.
     }
     
     // Initialize the chat conversation.
