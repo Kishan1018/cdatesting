@@ -236,12 +236,14 @@
       color: var(--text-color);
       outline: none;
       resize: none;
+      /* We remove the conflicting overflow-y: auto to ensure expansion */
       overflow: hidden;
       white-space: pre-wrap;
       overflow-wrap: break-word;
       transition: height 0.3s ease;
       max-height: 200px;
-      overflow-y: auto;
+      /* force no vertical scroll so that the auto-resizing can take effect */
+      overflow-y: hidden;
       box-shadow: 0 0 4px rgba(255,255,255,0.5);
     }
     .input-section textarea::placeholder {
